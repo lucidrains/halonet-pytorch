@@ -19,7 +19,6 @@ from halonet_pytorch import HaloAttention
 
 attn = HaloAttention(
     dim = 512,         # dimension of feature map
-    fmap_size = 32,    # feature map height and width
     block_size = 8,    # neighborhood block size (feature map must be divisible by this)
     halo_size = 4,     # halo size (block receptive field)
     dim_head = 64,     # dimension of each head

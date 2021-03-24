@@ -47,15 +47,13 @@ class RelPosEmb(nn.Module):
     def __init__(
         self,
         block_size,
-        fmap_size,
+        rel_size,
         dim_head
     ):
         super().__init__()
-        fmap_size = pair(fmap_size)
-        height, width = fmap_size
+        height = width = rel_size
         scale = dim_head ** -0.5
 
-        self.fmap_size = fmap_size
         self.block_size = block_size
         self.rel_height = nn.Parameter(torch.randn(height * 2 - 1, dim_head) * scale)
         self.rel_width = nn.Parameter(torch.randn(width * 2 - 1, dim_head) * scale)
@@ -79,14 +77,12 @@ class HaloAttention(nn.Module):
         self,
         *,
         dim,
-        fmap_size,
         block_size,
         halo_size,
         dim_head = 64,
         heads = 8
     ):
         super().__init__()
-        assert fmap_size % block_size == 0, 'feature map height or width must be divisible by block size'
         assert halo_size > 0, 'halo size must be greater than 0'
 
         self.dim = dim
@@ -100,7 +96,7 @@ class HaloAttention(nn.Module):
 
         self.rel_pos_emb = RelPosEmb(
             block_size = block_size,
-            fmap_size = block_size + (halo_size * 2),
+            rel_size = block_size + (halo_size * 2),
             dim_head = dim_head
         )
 
@@ -108,16 +104,9 @@ class HaloAttention(nn.Module):
         self.to_kv = nn.Linear(dim, inner_dim * 2, bias = False)
         self.to_out = nn.Linear(inner_dim, dim)
 
-        # prepare a mask for removing attention to padding, cached for performance
-
-        mask = torch.ones(1, 1, fmap_size, fmap_size)
-        mask = F.unfold(mask, kernel_size = block_size + (halo_size * 2), stride = block_size, padding = halo_size)
-        mask = repeat(mask, 'b j i -> (b i h) j', h = heads)
-        self.register_buffer('mask', mask == 0)
-
     def forward(self, x):
         b, c, h, w, block, halo, heads, device = *x.shape, self.block_size, self.halo_size, self.heads, x.device
-        assert h == w, 'dimensions of fmap must be same on both sides, for now'
+        assert h % block == 0 and w % block == 0, 'fmap dimensions must be divisible by the block size'
         assert c == self.dim, f'channels for input ({c}) does not equal to the correct dimension ({self.dim})'
 
         # get block neighborhoods, and prepare a halo-ed version (blocks with padding) for deriving key values
@@ -150,7 +139,11 @@ class HaloAttention(nn.Module):
 
         # mask out padding (in the paper, they claim to not need masks, but what about padding?)
 
-        mask = repeat(self.mask, 'h j -> (b h) () j', b = b)
+        mask = torch.ones(1, 1, h, w, device = device)
+        mask = F.unfold(mask, kernel_size = block + (halo * 2), stride = block, padding = halo)
+        mask = repeat(mask, '() j i -> (b i h) () j', b = b, h = heads)
+        mask = mask.bool()
+
         max_neg_value = -torch.finfo(sim.dtype).max
         sim.masked_fill_(mask, max_neg_value)
 

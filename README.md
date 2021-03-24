@@ -18,10 +18,12 @@ import torch
 from halonet_pytorch import HaloAttention
 
 attn = HaloAttention(
-    dim = 512,
-    fmap_size = 32,
-    block_size = 8,
-    halo_size = 4
+    dim = 512,         # dimension of feature map
+    fmap_size = 32,    # feature map height and width
+    block_size = 8,    # neighborhood block size (feature map must be divisible by this)
+    halo_size = 4,     # halo size (block receptive field)
+    dim_head = 64,     # dimension of each head
+    heads = 4          # number of attention heads
 ).cuda()
 
 fmap = torch.randn(1, 512, 32, 32).cuda()

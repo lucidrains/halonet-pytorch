@@ -128,10 +128,10 @@ class HaloAttention(nn.Module):
 
         # get block neighborhoods, and prepare a halo-ed version (blocks with padding) for deriving key values
 
-        q_inp = F.unfold(x, kernel_size = block, stride = block)
-        kv_inp = F.unfold(x, kernel_size = block + halo * 2, stride = block, padding = halo)
+        q_inp = rearrange(x, 'b c (h p1) (w p2) -> (b h w) (p1 p2) c', p1 = block, p2 = block)
 
-        q_inp, kv_inp = map(lambda t: rearrange(t, 'b (c j) i -> (b i) j c', c = c), (q_inp, kv_inp))
+        kv_inp = F.unfold(x, kernel_size = block + halo * 2, stride = block, padding = halo)
+        kv_inp = rearrange(kv_inp, 'b (c j) i -> (b i) j c', c = c)
 
         # derive queries, keys, values
 

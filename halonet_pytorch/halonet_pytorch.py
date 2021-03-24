@@ -4,11 +4,6 @@ import torch.nn.functional as F
 
 from einops import rearrange, repeat
 
-# helpers
-
-def exists(val):
-    return val is not None
-
 # relative positional embedding
 
 def to(x):

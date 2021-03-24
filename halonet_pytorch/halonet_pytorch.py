@@ -61,7 +61,7 @@ class RelPosEmb(nn.Module):
     def forward(self, q):
         block = self.block_size
 
-        q = rearrange(q, 'b (h w) c -> b h w c', h = block)
+        q = rearrange(q, 'b (x y) c -> b x y c', x = block)
         rel_logits_w = relative_logits_1d(q, self.rel_width)
         rel_logits_w = rearrange(rel_logits_w, 'b x i y j-> b (x y) (i j)')
 

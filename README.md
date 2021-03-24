@@ -1,3 +1,5 @@
+<img src="./halonet.png" width="500px"></img>
+
 ## HaloNet - Pytorch (wip)
 
 Implementation of the Attention layer from the paper, <a href="https://arxiv.org/abs/2103.12731">Scaling Local Self-Attention For Parameter Efficient Visual Backbones</a>

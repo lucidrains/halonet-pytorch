@@ -121,8 +121,7 @@ class HaloAttention(nn.Module):
         self.register_buffer('mask', mask == 0)
 
     def forward(self, x):
-        shape = x.shape
-        b, c, h, w, block, halo, heads, device = *shape, self.block_size, self.halo_size, self.heads, x.device
+        b, c, h, w, block, halo, heads, device = *x.shape, self.block_size, self.halo_size, self.heads, x.device
         assert h == w, 'dimensions of fmap must be same on both sides, for now'
         assert c == self.dim, f'channels for input ({c}) does not equal to the correct dimension ({self.dim})'
 
@@ -175,5 +174,5 @@ class HaloAttention(nn.Module):
 
         # merge blocks back to original feature map
 
-        out = rearrange(out, '(b i) j c -> b c j i', i = (h // block) * (w // block))
-        return out.reshape(shape)
+        out = rearrange(out, '(b h w) (p1 p2) c -> b c (h p1) (w p2)', b = b, h = (h // block), w = (w // block), p1 = block, p2 = block)
+        return out

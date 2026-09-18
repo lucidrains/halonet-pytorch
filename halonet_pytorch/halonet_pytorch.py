@@ -142,7 +142,7 @@ class HaloAttention(nn.Module):
         mask = torch.ones(1, 1, h, w, device = device)
         mask = F.unfold(mask, kernel_size = block + (halo * 2), stride = block, padding = halo)
         mask = repeat(mask, '() j i -> (b i h) () j', b = b, h = heads)
-        mask = mask.bool()
+        mask = ~mask.bool()
 
         max_neg_value = -torch.finfo(sim.dtype).max
         sim.masked_fill_(mask, max_neg_value)
